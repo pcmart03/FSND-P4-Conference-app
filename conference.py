@@ -38,6 +38,9 @@ from models import ConferenceQueryForms
 from models import TeeShirtSize
 from models import Session
 from models import SessionForm
+from models import SessionForms
+from models import SessionQueryForm
+from models import SessionQueryForms
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -101,6 +104,13 @@ SESSION_GET_REQUEST = endpoints.ResourceContainer(
 SESSION_POST_REQUEST = endpoints.ResourceContainer(
     SessionForm,
     websafeConferenceKey=messages.StringField(1),
+)
+
+
+SESSION_BY_TYPE_GET_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    websafeConferenceKey=messages.StringField(1),
+    sessionType=messages.StringField(2),
 )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -621,6 +631,36 @@ class ConferenceApi(remote.Service):
     def createSession(self, request):
         """create new conference"""
         return self._createSessionObject(request)
+
+    @endpoints.method(SESSION_GET_REQUEST, SessionForms,
+                      path='conference/{websafeConferenceKey}/sessions',
+                      http_method='POST', name='getConferenceSessions')
+    def getConferenceSessions(self, request):
+        """Return all sessions connected to a websafeConferenceKey"""
+        c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
+
+        if not c_key.get():
+            raise endpoints.NotFoundException(
+                'Failed to find a conference with given conference key')
+        sessions = Session.query(ancestor=c_key)
+
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sessions])
+
+    @endpoints.method(SESSION_BY_TYPE_GET_REQUEST, SessionForms,
+            path='conference/{websafeConferenceKey}/sessions/{sessionType}',
+            http_method='POST', name='getConferenceSessionsByType')
+    def getConferenceSessionsByType(self, request):
+        """Return conference sessions of a given session type"""
+        if not c_key.get():
+            raise endpoints.NotFoundException(
+                'Failed to find a conference with given conference key')
+        sessions = Session.query(ancestor=c_key).filter(
+                Session.typeofSession == request.typeOfSession)
+
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sessions]
+        )
 
 
 api = endpoints.api_server([ConferenceApi])# register API
