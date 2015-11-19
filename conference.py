@@ -65,7 +65,7 @@ DEFAULTS = {
 
 SESSION_DEFAULTS = {
     "speaker": "Awesome Speaker",
-    "duration": "30",
+    "duration": 30,
     "typeOfSession": "Breakout"
 }
 
@@ -110,9 +110,13 @@ SESSION_POST_REQUEST = endpoints.ResourceContainer(
 SESSION_BY_TYPE_GET_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     websafeConferenceKey=messages.StringField(1),
-    sessionType=messages.StringField(2),
+    typeOfSession=messages.StringField(2),
 )
 
+SESSION_BY_SPEAKER_GET_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    speaker=messages.StringField(1),
+)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -648,19 +652,36 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sessions])
 
     @endpoints.method(SESSION_BY_TYPE_GET_REQUEST, SessionForms,
-            path='conference/{websafeConferenceKey}/sessions/{sessionType}',
+            path='conference/{websafeConferenceKey}/sessions/{typeOfSession}',
             http_method='POST', name='getConferenceSessionsByType')
     def getConferenceSessionsByType(self, request):
         """Return conference sessions of a given session type"""
+        c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
+        
         if not c_key.get():
             raise endpoints.NotFoundException(
                 'Failed to find a conference with given conference key')
+        
         sessions = Session.query(ancestor=c_key).filter(
-                Session.typeofSession == request.typeOfSession)
+                Session.typeOfSession == request.typeOfSession)
 
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sessions]
         )
+
+
+    @endpoints.method(SESSION_BY_SPEAKER_GET_REQUEST, SessionForms,
+            path='sessions/{speaker}',
+            http_method='POST', name='getConferenceSessionsBySpeaker')
+    def getConferenceSessionsBySpeaker(self, request):
+        """Return all sessions by a speaker across all conferences"""
+        sessions = Session.query().filter(
+                Session.speaker == request.speaker)
+
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sessions]
+        )
+
 
 
 api = endpoints.api_server([ConferenceApi])# register API
