@@ -40,6 +40,7 @@ class ProfileForm(messages.Message):
     mainEmail = messages.StringField(2)
     teeShirtSize = messages.EnumField('TeeShirtSize', 3)
     conferenceKeysToAttend = messages.StringField(4, repeated=True)
+    essionKeysToAttend = messages.StringField(5, repeated=True)
 
 class StringMessage(messages.Message):
     """StringMessage-- outbound (single) string message"""
@@ -119,6 +120,7 @@ class Session(ndb.Model):
     typeOfSession = ndb.StringProperty()
     date = ndb.DateProperty()
     startTime = ndb.TimeProperty()
+    interestedAttendees = ndb.IntegerProperty()
 
 
 class SessionForm(messages.Message):
@@ -131,6 +133,7 @@ class SessionForm(messages.Message):
     date = messages.StringField(6)
     startTime = messages.StringField(7)
     websafeKey = messages.StringField(8)
+    interestedAttendees = messages.IntegerField(9, repeated=True)
 
 
 class SessionForms(messages.Message):
