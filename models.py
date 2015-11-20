@@ -119,7 +119,7 @@ class Session(ndb.Model):
     duration = ndb.IntegerProperty()
     typeOfSession = ndb.StringProperty()
     date = ndb.DateProperty()
-    startTime = ndb.TimeProperty()
+    startTime = ndb.IntegerProperty()
     interestedAttendees = ndb.IntegerProperty()
 
 
@@ -131,9 +131,9 @@ class SessionForm(messages.Message):
     duration = messages.IntegerField(4)
     typeOfSession = messages.StringField(5)
     date = messages.StringField(6)
-    startTime = messages.StringField(7)
+    startTime = messages.IntegerField(7)
     websafeKey = messages.StringField(8)
-    interestedAttendees = messages.IntegerField(9, repeated=True)
+    interestedAttendees = messages.IntegerField(9)
 
 
 class SessionForms(messages.Message):

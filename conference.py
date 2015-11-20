@@ -66,7 +66,9 @@ DEFAULTS = {
 SESSION_DEFAULTS = {
     "speaker": "Awesome Speaker",
     "duration": 30,
-    "typeOfSession": "Breakout"
+    "typeOfSession": "Breakout",
+    "startTime": 1100,
+    "interestedAttendees": 0,
 }
 
 OPERATORS = {
@@ -599,7 +601,7 @@ class ConferenceApi(remote.Service):
                     setattr(sf, field.name, str(getattr(sess, field.name)))
                 else:
                     setattr(sf, field.name, getattr(sess, field.name))
-            elif field.name == "websafekey":
+            elif field.name == "websafeKey":
                 setattr(sf, field.name, sess.key.urlsafe())
         sf.check_initialized()
         return sf
@@ -719,8 +721,8 @@ class ConferenceApi(remote.Service):
             if s_key in prof.sessionKeysToAttend:
 
                 # remove user, decrease interested users
-                prof.conferenceKeysToAttend.remove(s_key)
-                session.seatsAvailable -= 1
+                prof.sessionKeysToAttend.remove(s_key)
+                session.interestedAttendees -= 1
                 retval = True
             else:
                 retval = False
@@ -731,8 +733,8 @@ class ConferenceApi(remote.Service):
         return BooleanMessage(data=retval)
 
 
-    @endpoints.method(SESSION_GET_REQUEST, BooleanMessage,
-                      path='wishlist/{sessionKey}', http_method='POST',
+    @endpoints.method(SESSION_KEY_GET_REQUEST, BooleanMessage,
+                      http_method='POST',
                       name='addSessionToWishlist')
     def addSessionToWishlist(self, request):
         """Add the selected session to the user wishlist"""
@@ -740,9 +742,9 @@ class ConferenceApi(remote.Service):
 
 
     @endpoints.method(SESSION_KEY_GET_REQUEST, BooleanMessage,
-                      path='wishlist/{sessionKey}', http_method='DELETE',
+                    http_method='DELETE',
                       name='removeSessionfromWishlist')
-    def addSessionToWishlist(self, request):
+    def removeSessionfromWishlist(self, request):
         """Remove the selected session from the user wishlist"""
         return self._addSessionToWishlist(request, wish=False)
 
@@ -753,7 +755,7 @@ class ConferenceApi(remote.Service):
     def getSessionsInWishlist(self, request):
         """Get sessions in user wish list"""
         prof = self._getProfileFromUser()
-        s_keys = [ndb.Key(urlsafe=s_key) in prof.sessionKeysToAttend]
+        s_keys = [ndb.Key(urlsafe=s_key) for s_key in prof.sessionKeysToAttend]
         sessions = ndb.get_multi(s_keys)
 
         return SessionForms(
