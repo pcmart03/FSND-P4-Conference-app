@@ -123,6 +123,14 @@ SESSION_BY_SPEAKER_GET_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     speaker=messages.StringField(1),
 )
+
+SESSION_BY_START_TIME_GET_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    websafeConferenceKey=messages.StringField(1),
+    date=messages.StringField(2),
+    startTime=messages.IntegerField(3),
+)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -581,8 +589,8 @@ class ConferenceApi(remote.Service):
         # value = "London"
         # f = ndb.query.FilterNode(field, operator, value)
         # q = q.filter(f)
-        q = q.filter(Conference.city=="London")
-        q = q.filter(Conference.topics=="Medical Innovations")
+        # q = q.filter(Conference.city=="London")
+        # q = q.filter(Conference.topics=="Medical Innovations")
         q = q.filter(Conference.month==6)
 
         return ConferenceForms(
@@ -760,6 +768,48 @@ class ConferenceApi(remote.Service):
 
         return SessionForms(
             items=[self._copySessionToForm(session) for session in sessions])
+
+# --- Task 5 querries ---------------------------------------------
+
+    @endpoints.method(SESSION_GET_REQUEST, SessionForms,
+            path='conference/{websafeConferenceKey}/sessions/popular',
+            http_method='POST', name='getPopularSessions')
+    def getPopularSessions(self, request):
+        """Return conference sessions with more than five people interested"""
+        c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
+
+        if not c_key.get():
+            raise endpoints.NotFoundException(
+                'Failed to find a conference with given conference key')
+
+        sessions = Session.query(ancestor=c_key).filter(
+                Session.interestedAttendees > 5)
+
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sessions]
+        )
+
+
+    @endpoints.method(SESSION_BY_START_TIME_GET_REQUEST, SessionForms,
+            http_method="POST", name='getSessionsByStartTime')
+    def getSessionsByStartTime(self, request):
+        """Return conference sessions starting at a date and time"""
+        c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
+
+        if not c_key.get():
+            raise endpoints.NotFoundException(
+                'Failed to find a conference with given conference key')
+
+        formatted_date = datetime.strptime(request.date, "%Y-%m-%d").date()
+        sessions = Session.query(ancestor=c_key).filter(
+            ndb.AND(Session.date == formatted_date,
+                    Session.startTime == request.startTime))
+
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sessions]
+        )
+
+
 
 
 api = endpoints.api_server([ConferenceApi])# register API
