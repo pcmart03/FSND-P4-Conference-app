@@ -54,6 +54,8 @@ API_EXPLORER_CLIENT_ID = endpoints.API_EXPLORER_CLIENT_ID
 MEMCACHE_ANNOUNCEMENTS_KEY = "RECENT_ANNOUNCEMENTS"
 ANNOUNCEMENT_TPL = ('Last chance to attend! The following conferences '
                     'are nearly sold out: %s')
+MEMCACHE_FEATURED_SPEAKER_KEY = "FEATURED_SPEAKER"
+FEATURE_SESSIONS_TPL = ( "Featured speaker: %s; Sessions: %s")
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 DEFAULTS = {
@@ -641,7 +643,12 @@ class ConferenceApi(remote.Service):
         data['key'] = s_key
 
         Session(**data).put()
+        taskqueue.add(params={'conference': request.websafeConferenceKey,
+            'speaker': data['speaker']},
+            url='/tasks/set_featured_speaker'
+        )
         return self._copySessionToForm(s_key.get())
+
 
 
     @endpoints.method(SESSION_POST_REQUEST, SessionForm, path='createSession/{websafeConferenceKey}',
@@ -808,6 +815,53 @@ class ConferenceApi(remote.Service):
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sessions]
         )
+
+    @endpoints.method(SESSION_GET_REQUEST, SessionForms,
+        http_method="POST", name="getEarlyNonWorkshops")
+    def getEarlyNonWorkshops(self, request):
+        """Return conference sessions that are not workshops
+        and star before 7 PM"""
+        c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
+
+        if not c_key.get():
+            raise endpoints.NotFoundException(
+                'Failed to find a conference with given conference key')
+        # Query for sessions starting before 7
+        sessions = Session.query(ancestor=c_key).filter(ndb.AND(
+            Session.startTime != None,
+            Session.startTime <= 1900))
+
+        # Filter out workshop sessions
+        filtered_sessions = []
+        for session in sessions:
+            if 'workshop' in session.typeOfSession:
+                continue
+            else:
+                filtered_sessions.append(session)
+
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in filtered_sessions]
+        )
+
+#--- Featured Speaker---------------------------------------------
+    @staticmethod
+    def _cacheFeaturedSpeaker(websafeConferenceKey, speaker):
+        """Checks to see if speaker has more than one session in a conference.
+        If so, sets the speaker as the featured speaker in memcache """
+        conference = ndb.Key(urlsafe=websafeConferenceKey).get()
+        sessions = Session.query(ancestor=conference.key).filter(
+            Session.speaker == speaker).fetch()
+        if len(sessions) > 1:
+            featureString = FEATURE_SESSIONS_TPL % (
+                speaker, ', '.join([s.name for s in sessions]))
+            memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, featureString)
+
+    @endpoints.method(message_types.VoidMessage, StringMessage,
+            http_method='GET', name='getFeaturedSpeaker')
+    def getFeaturedSpeaker(self, request):
+        """Return Featured Speaker from memcache."""
+        return StringMessage(data=memcache.get(
+            MEMCACHE_FEATURED_SPEAKER_KEY) or "")
 
 
 

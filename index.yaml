@@ -99,3 +99,8 @@ indexes:
   ancestor: yes
   properties:
   - name: interestedAttendees
+
+- kind: Session
+  ancestor: yes
+  properties:
+  - name: startTime
