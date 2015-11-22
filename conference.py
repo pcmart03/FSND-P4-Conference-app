@@ -621,6 +621,13 @@ class ConferenceApi(remote.Service):
         user = endpoints.get_current_user()
         if not user:
             raise endpoints.UnauthorizedException('Authorization required')
+        user_id = getUserId(user)
+
+        conf = ndb.Key(urlsafe=request.websafeConferenceKey)
+         # check that user is owner
+        if user_id != conf.organizerUserId:
+            raise endpoints.ForbiddenException(
+                'Only the organizer can add sessions to this conference.')
 
         if not request.name:
             raise endpoints.BadRequestException("Session 'name' field required")
@@ -636,7 +643,6 @@ class ConferenceApi(remote.Service):
         if data['date']:
             data['date'] = datetime.strptime(data['date'][:10], "%Y-%m-%d").date()
 
-        c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
         s_id = Session.allocate_ids(size=1, parent=c_key)[0]
         s_key = ndb.Key(Session, s_id, parent=c_key)
 
