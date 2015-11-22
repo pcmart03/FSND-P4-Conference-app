@@ -623,7 +623,8 @@ class ConferenceApi(remote.Service):
             raise endpoints.UnauthorizedException('Authorization required')
         user_id = getUserId(user)
 
-        conf = ndb.Key(urlsafe=request.websafeConferenceKey)
+        c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
+        conf = c_key.get()
          # check that user is owner
         if user_id != conf.organizerUserId:
             raise endpoints.ForbiddenException(
