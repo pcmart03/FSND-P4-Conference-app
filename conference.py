@@ -666,7 +666,7 @@ class ConferenceApi(remote.Service):
 
     @endpoints.method(SESSION_GET_REQUEST, SessionForms,
                       path='conference/{websafeConferenceKey}/sessions',
-                      http_method='POST', name='getConferenceSessions')
+                      http_method='GET', name='getConferenceSessions')
     def getConferenceSessions(self, request):
         """Return all sessions connected to a websafeConferenceKey"""
         c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
@@ -681,7 +681,7 @@ class ConferenceApi(remote.Service):
 
     @endpoints.method(SESSION_BY_TYPE_GET_REQUEST, SessionForms,
             path='conference/{websafeConferenceKey}/sessions/{typeOfSession}',
-            http_method='POST', name='getConferenceSessionsByType')
+            http_method='GET', name='getConferenceSessionsByType')
     def getConferenceSessionsByType(self, request):
         """Return conference sessions of a given session type"""
         c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
@@ -700,7 +700,7 @@ class ConferenceApi(remote.Service):
 
     @endpoints.method(SESSION_BY_SPEAKER_GET_REQUEST, SessionForms,
             path='sessions/{speaker}',
-            http_method='POST', name='getConferenceSessionsBySpeaker')
+            http_method='GET', name='getConferenceSessionsBySpeaker')
     def getConferenceSessionsBySpeaker(self, request):
         """Return all sessions by a speaker across all conferences"""
         sessions = Session.query().filter(
@@ -787,7 +787,7 @@ class ConferenceApi(remote.Service):
 
     @endpoints.method(SESSION_GET_REQUEST, SessionForms,
             path='conference/{websafeConferenceKey}/sessions/popular',
-            http_method='POST', name='getPopularSessions')
+            http_method='GET', name='getPopularSessions')
     def getPopularSessions(self, request):
         """Return conference sessions with more than five people interested"""
         c_key = ndb.Key(urlsafe=request.websafeConferenceKey)
@@ -805,7 +805,7 @@ class ConferenceApi(remote.Service):
 
 
     @endpoints.method(SESSION_BY_START_TIME_GET_REQUEST, SessionForms,
-            http_method="POST", name='getSessionsByStartTime')
+            http_method="GET", name='getSessionsByStartTime')
     def getSessionsByStartTime(self, request):
         """Return conference sessions starting at a date and time"""
         c_key = ndb.Key(urlsafe=request.websafeConferenceKey)

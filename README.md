@@ -2,9 +2,23 @@ App Engine application for the Udacity training course.
 
 ## Student Responses
 ### Add Sessions to a Conference
-I mostly followed the pattern establish in the create conference methods to add sessions, only I set the conference as the parent for the session rather than the user. However, only the conference creator can add sessions to the conference.
+The session model includes the following properties:
 
-For the featured speaker, I created a static method **cacheFeaturedSpeaker()** that checks to see if the speaker has more than one session at the conference. If so, the method udates memcache with the speaker name and sessions. I then created a request handler called **SetFeaturedSpeakerHandler** that calls the static method. Finally, I created a task in my **createSession()** method to set the featured speaker.
+* name (required)
+* highlights
+* speaker 
+* duration
+* typeOfSession
+* date
+* startTime
+* interestedAttendees (repeated)
+
+Name, highlights, speaker, typeOfSession, and interestedAttendees are string properties. InterestedAttendees is a repeated property to record when more than one attendee is interested in the session. For this project, I just use it to get a count of the interested attendees for the **getPopularSessions** endpoint. However, in a more robust application, it could be used to return create a "See who else is interested" display, kind of like the facebook's "see who else has liked this" function.
+
+I decided to save the startTime as an integer for convenience while developing. Times should be entered in 24 hour format with no colon. For example `0700 = 7:00 AM` and `1930 = 7:30 PM` This was easy to remember and hard to mess up while I was running tests. 
+
+I chose to make speaker an ordinary text field, rather than having it auto populate from Google plus because I limited session creation to the session organizer, who I imagine would not be the speaker of every session. 
+
 
 ### Create 2 additional queries
 1. **getPopularSessions** This querries looks for sessions in which more that have been added to more than five wishlists. I recognize that five is low threshold, but I figured it was fine for testing purposes
@@ -12,7 +26,7 @@ For the featured speaker, I created a static method **cacheFeaturedSpeaker()** t
 2. **getSessionByStartTime** This querries filters by Session.date and Session.startTime to return sessions begining at a specific time. It would be useful for an attendee looking to fill a whole in his or her schedule.
 
 ### Query Related Problem Solution
-Currently Data store does not allow more than one inequality filter at a time, so attemping something like `.filter(ndb.AND(Session.typeOfSession != 'workshop', session.startTime < 1900))` would return an exception. In order to perform this querry, I first peformed a query that returned all sessions starting before 7. Then I iterated over the results of the query, and pushed all non-workshop querries to a list called filtered_session.  You can see my implementation under the endpoint **getEarlyNonWorkshops()**
+Currently Data store does not allow more than one inequality filter at a time unless they are on the same field, so attemping something like `.filter(ndb.AND(Session.typeOfSession != 'workshop', session.startTime < 1900))` would return an exception. In order to perform this querry, I first peformed a query that returned all sessions starting before 7. Then I iterated over the results of the query, and pushed all non-workshop querries to a list called filtered_session.  You can see my implementation under the endpoint **getEarlyNonWorkshops()**
 
 
 
